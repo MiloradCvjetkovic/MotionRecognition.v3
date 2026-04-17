@@ -1,0 +1,7 @@
+{
+    "debug.hideSlowPreLaunchWarning": true,
+    "debug.showInStatusBar": "never",
+    "clangd.arguments": [
+        "--compile-commands-dir=d:\\Repositories\\GitHub\\Arm-Examples\\SDS-Examples\\ST\\B-U585I-IOT02A\\MotionRecognition.v3\\out\\DataTest\\STM32U585AIIx\\Debug"
+    ]
+}
