@@ -36,8 +36,6 @@ static uint8_t sds_data_out_buf[((ALGO_DATA_OUT_BLOCK_SIZE * 2) + 2048)] __ALIGN
 static sdsId_t sds_data_in_id  = NULL;
 static sdsId_t sds_data_out_id = NULL;
 
-// SDS file sequence number
-static uint32_t sequence_num = 0;
 
 // Public functions
 
@@ -53,8 +51,10 @@ int32_t OpenStreams (void) {
   if ((sdsFlags & SDS_FLAG_PLAYBACK) != 0U) {   // -- Playback
     // Check https://arm-software.github.io/SDS-Framework/main/theory.html#filenames for details on playback filename
     sds_data_in_id = sdsOpen("DataInput", sdsModeRead, sds_data_in_buf, sizeof(sds_data_in_buf));
+    SDS_PRINTF("SDS playback ");
   } else {                                      // -- Recording
     sds_data_in_id = sdsOpen("DataInput", sdsModeWrite, sds_data_in_buf, sizeof(sds_data_in_buf));
+    SDS_PRINTF("SDS recording ");
   }
   // Open stream for recording of output data
   if (sds_data_in_id != NULL) {
@@ -65,11 +65,11 @@ int32_t OpenStreams (void) {
   SDS_ASSERT(sds_data_out_id != NULL);
 
   if ((sds_data_in_id != NULL) && (sds_data_out_id != NULL)) {
-    SDS_PRINTF("SDS playback/recording (#%d) started\n", sequence_num);
+    SDS_PRINTF("started\n");
   } else {
     sdsState = SDS_STATE_END;       // If files could not be opened then request streaming end
     status = -1;
-    SDS_PRINTF("SDS playback/recording (#%d) start failed\n", sequence_num);
+    SDS_PRINTF("start failed\n");
   }
 
   return status;
@@ -92,12 +92,11 @@ int32_t CloseStreams (void) {
   }
 
   if (close_status == SDS_OK) {
-    SDS_PRINTF("SDS playback/recording (#%d) stopped\n====\n\n", sequence_num);
+    SDS_PRINTF("SDS playback/recording stopped\n====\n\n");
   } else {
-    SDS_PRINTF("SDS playback/recording (#%d) stop failed\n", sequence_num);
+    SDS_PRINTF("SDS playback/recording stop failed\n");
     status = -1;
   }
-  sequence_num++;
 
   return status;
 }
