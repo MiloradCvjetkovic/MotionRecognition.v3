@@ -26,9 +26,6 @@
 #include "sds.h"
 #include "sds_main.h"
 #include "sds_control.h"
-#ifdef   RTE_SDS_IO_SOCKET
-#include "sdsio_config_socket.h"
-#endif
 
 
 // AlgorithmThread thread attributes
@@ -155,62 +152,6 @@ __NO_RETURN void sdsControlThread (void *argument) {
 
   // Initialize SDS system
   ret = sdsInit(sds_event_callback);
-
-  // Output a diagnostic message about initialization
-  switch (ret) {
-    case SDS_OK:
-#if   defined(RTE_SDS_IO_VSI)
-      SDS_PRINTF("SDS I/O VSI interface initialized successfully\n");
-#elif defined(RTE_SDS_IO_SOCKET)
-      SDS_PRINTF("SDS I/O socket interface initialized successfully.\n")
-      SDS_PRINTF("Connection to SDSIO-Server established at %s:%d\n", SDSIO_SOCKET_SERVER_IP, SDSIO_SOCKET_SERVER_PORT);
-#elif defined(RTE_SDS_IO_USB)
-      SDS_PRINTF("SDS I/O USB interface initialized successfully\n");
-#elif defined(RTE_SDS_IO_SERIAL_CMSIS_USART)
-      SDS_PRINTF("SDS I/O USART interface initialized successfully\n");
-#elif defined(RTE_SDS_IO_CUSTOM)
-      SDS_PRINTF("SDS I/O Custom interface initialized successfully\n");
-#elif defined(RTE_SDS_IO_FILE_SYSTEM_MDK_FS)
-      SDS_PRINTF("SDS I/O File System (MDK-FS) interface initialized successfully\n");
-#elif defined(RTE_SDS_IO_FILE_SYSTEM_SEMIHOSTING)
-      SDS_PRINTF("SDS I/O File System (SemiHosting) interface initialized successfully\n");
-#endif
-      break;
-
-    case SDS_ERROR_IO:
-#if   defined(RTE_SDS_IO_VSI)
-      SDS_PRINTF("SDS I/O VSI interface initialization failed!\n");
-#elif defined(RTE_SDS_IO_SOCKET)
-      if (strcmp(SDSIO_SOCKET_SERVER_IP, "0.0.0.0") == 0) {
-        SDS_PRINTF("SDSIO_SOCKET_SERVER_IP address not configured (see sdsio_config_socket.h)!\n");
-      } else {
-        SDS_PRINTF("SDS I/O Network interface initialization failed or 'sdsio-server socket' unavailable at %s:%d !\n", SDSIO_SOCKET_SERVER_IP, SDSIO_SOCKET_SERVER_PORT);
-        SDS_PRINTF("Ensure that SDSIO-Server is running, then restart the application!\n");
-      }
-#elif defined(RTE_SDS_IO_USB)
-      SDS_PRINTF("SDS I/O USB interface initialization failed!\n");
-      SDS_PRINTF("Ensure that device is connected via USB to the host PC running SDSIO-Server, then restart the application!\n");
-#elif defined(RTE_SDS_IO_SERIAL_CMSIS_USART)
-      SDS_PRINTF("SDS I/O USART interface initialization failed or 'sdsio-server serial' unavailable!\n");
-      SDS_PRINTF("Ensure that device is connected via USART to the host PC running SDSIO-Server, then restart the application!\n");
-#elif defined(RTE_SDS_IO_CUSTOM)
-      SDS_PRINTF("SDS I/O Custom interface initialization failed!\n");
-      SDS_PRINTF("Ensure that device is connected via Custom interface to the host PC running SDSIO-Server!\n");
-#elif defined(RTE_SDS_IO_FILE_SYSTEM_MDK_FS)
-      SDS_PRINTF("SDS I/O File System MDK-FS interface initialization failed!\n");
-#elif defined(RTE_SDS_IO_FILE_SYSTEM_SEMIHOSTING)
-      SDS_PRINTF("SDS I/O File System SemiHosting interface initialization failed!\n");
-#endif
-      break;
-
-    case SDS_ERROR:
-      SDS_PRINTF("SDS initialization failed to create necessary threads or event flags!\n");
-      break;
-
-    default:
-      SDS_PRINTF("SDS initialization failed with error code: %d\n", ret);
-      break;
-  }
   SDS_ERROR_CHECK(ret);
 
   // Create algorithm thread
