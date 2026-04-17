@@ -234,16 +234,12 @@ __NO_RETURN void sdsControlThread (void *argument) {
         __NVIC_SystemReset();
         for (;;) {}                     // Wait for reset
 
-      case SDS_STATE_TERMINATE:         // Request to terminate application
+      case SDS_STATE_TERMINATE:         // Request to terminate CI run (on FVP simulation or pyOCD)
       default:                          // or unexpected state
-#ifdef SIMULATOR
-        // If target is simulator then send signal to terminate the simulator
+        // Send signal to terminate simulator or pyOCD
         putchar(0x04);
-        for (;;) {}                     // Wait for simulator to shutdown
-#else
-        // If target is hardware then exit this thread
-        osThreadExit();
-#endif
+        sdsState = SDS_STATE_INACTIVE;
+        break;
     }
 
     // Track idle time and print idle rate every 1 second
