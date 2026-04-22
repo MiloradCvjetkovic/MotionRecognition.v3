@@ -36,6 +36,8 @@ static uint8_t sds_data_out_buf[((ALGO_DATA_OUT_BLOCK_SIZE * 2) + 2048)] __ALIGN
 static sdsId_t sds_data_in_id  = NULL;
 static sdsId_t sds_data_out_id = NULL;
 
+// Recording/playback mode text
+static const char *SDS_MODE[] = { "recording", "playback" };
 
 // Public functions
 
@@ -46,15 +48,18 @@ static sdsId_t sds_data_out_id = NULL;
 */
 int32_t OpenStreams (void) {
   int32_t status = 0;
+  uint8_t play = 0U;
+
+  if ((sdsFlags & SDS_FLAG_PLAYBACK) != 0U) {   // If open for playback requested
+    play = 1U;
+  }
 
   // Open stream for playback or recording of input data, depending on the mode
-  if ((sdsFlags & SDS_FLAG_PLAYBACK) != 0U) {   // -- Playback
+  if (play != 0U) {                             // -- Playback
     // Check https://arm-software.github.io/SDS-Framework/main/theory.html#filenames for details on playback filename
     sds_data_in_id = sdsOpen("DataInput", sdsModeRead, sds_data_in_buf, sizeof(sds_data_in_buf));
-    SDS_PRINTF("SDS playback ");
   } else {                                      // -- Recording
     sds_data_in_id = sdsOpen("DataInput", sdsModeWrite, sds_data_in_buf, sizeof(sds_data_in_buf));
-    SDS_PRINTF("SDS recording ");
   }
   // Open stream for recording of output data
   if (sds_data_in_id != NULL) {
@@ -65,11 +70,11 @@ int32_t OpenStreams (void) {
   SDS_ASSERT(sds_data_out_id != NULL);
 
   if ((sds_data_in_id != NULL) && (sds_data_out_id != NULL)) {
-    SDS_PRINTF("started\n");
+    SDS_PRINTF("==== SDS %s started\n", SDS_MODE[play]);
   } else {
     sdsState = SDS_STATE_END;       // If files could not be opened then request streaming end
     status = -1;
-    SDS_PRINTF("start failed\n");
+    SDS_PRINTF("==== SDS %s start failed\n", SDS_MODE[play]);
   }
 
   return status;
@@ -83,6 +88,11 @@ int32_t OpenStreams (void) {
 int32_t CloseStreams (void) {
   int32_t close_status;
   int32_t status = 0;
+  uint8_t play = 0U;
+
+  if ((sdsFlags & SDS_FLAG_PLAYBACK) != 0U) {   // If open for playback requested
+    play = 1U;
+  }
 
   close_status = sdsClose(sds_data_in_id);
   SDS_ERROR_CHECK(close_status);
@@ -92,10 +102,10 @@ int32_t CloseStreams (void) {
   }
 
   if (close_status == SDS_OK) {
-    SDS_PRINTF("SDS playback/recording stopped\n====\n\n");
+    SDS_PRINTF("==== SDS %s stopped\n", SDS_MODE[play]);
   } else {
-    SDS_PRINTF("SDS playback/recording stop failed\n");
     status = -1;
+    SDS_PRINTF("==== SDS %s stop failed\n", SDS_MODE[play]);
   }
 
   return status;
@@ -119,10 +129,20 @@ __NO_RETURN void AlgorithmThread (void *argument) {
     sds_state = sdsState;
     sds_flags = sdsFlags;
 
+    if ((sds_state == SDS_STATE_ACTIVE) && ((sds_flags & SDS_FLAG_START) == 0U)) {
+      // If start flag was cleared during active streaming, request streaming stop
+      sdsState = SDS_STATE_STOP_REQ;
+      continue;
+    }
+
     if ((sds_flags & SDS_FLAG_PLAYBACK) != 0U) {        // -- Playback
+      // Discard input data during playback
+      DiscardInputData();
+
       // Wait for playback activation
       if (sds_state != SDS_STATE_ACTIVE) {
         osDelay(100U);
+        DiscardInputData();
         continue;
       }
 
@@ -131,13 +151,14 @@ __NO_RETURN void AlgorithmThread (void *argument) {
         ret = sdsRead(sds_data_in_id, &timeslot, algo_data_in_buf, sizeof(algo_data_in_buf));
         if (ret == SDS_NO_DATA) {
           osDelay(10U);
+          DiscardInputData();
         }
       } while (ret == SDS_NO_DATA);
     
       if (ret > 0) {
         SDS_ASSERT(ret == sizeof(algo_data_in_buf));
       } else {
-        // No more data, request streaming stop
+        // If there is no more data for playback, request streaming stop
         sdsState = SDS_STATE_STOP_REQ;
         continue;
       }

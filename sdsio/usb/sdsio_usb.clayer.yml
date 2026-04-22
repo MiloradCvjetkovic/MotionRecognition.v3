@@ -12,14 +12,12 @@ layer:
         - CMSIS_USB_Device
         - CMSIS-RTOS2
       provides:
-        - SDS_BUFFER
-        - SDS_REC_PLAY
+        - SDS_STREAM
         - SDS_IO
 
   components:
-    - component: SDS:Buffer
-    - component: SDS:IO:USB&MDK USB
     - component: SDS:Stream&CMSIS-RTOS2
+    - component: SDS:IO:USB&MDK USB
     - component: USB&MDK:CORE
     - component: USB&MDK:Device
     - component: USB&MDK:Device:Custom Class
