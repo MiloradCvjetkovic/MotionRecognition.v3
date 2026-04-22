@@ -34,7 +34,7 @@ extern "C"
 extern int32_t InitInputData (void);
 
 /**
-  \fn           int32_t DiscardInputData (void)
+  \fn           void DiscardInputData (void)
   \brief        Discard input data.
 */
 extern void DiscardInputData (void);

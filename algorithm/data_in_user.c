@@ -74,7 +74,7 @@ int32_t InitInputData (void) {
 }
 
 /**
-  \fn           int32_t DiscardInputData (void)
+  \fn           void DiscardInputData (void)
   \brief        Discard input data.
 */
 void DiscardInputData (void) {
