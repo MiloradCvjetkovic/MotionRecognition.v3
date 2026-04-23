@@ -1,5 +1,5 @@
 sds:
-  name: Data Input
+  name: Test Input Data
   description: Generated accelerometer samples at 16600 Hz
   frequency: 16600
   content:
